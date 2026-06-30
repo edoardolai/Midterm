@@ -1,2 +1,3 @@
 .midterm_venv
 *.pyc
+db.sqlite3
