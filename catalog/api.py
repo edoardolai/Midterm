@@ -2,12 +2,12 @@ from decimal import Decimal, InvalidOperation
 
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Max, Min
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework import generics, mixins
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Brand, Product
-from .serializers import ProductCreateSerializer, ProductSerializer
+from .serializers import ProductSerializer, ProductWriteSerializer
 
 
 def with_discount(queryset):
@@ -26,16 +26,38 @@ def with_discount(queryset):
     )
 
 
-class ProductDetail(generics.RetrieveAPIView):
-    """GET /api/product/<pk>/ - full product detail."""
+class ProductDetail(mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.DestroyModelMixin,
+                    generics.GenericAPIView):
+    """GET / PUT / DELETE /api/product/<pk>/ - one product.
+
+    The brief asks for retrieve, add, update and delete, so this one URL
+    also carries these methods. Each method forwards to the
+    matching mixin action.
+    """
     queryset = Product.objects.select_related("category", "brand")
-    serializer_class = ProductSerializer
+
+    def get_serializer_class(self):
+        # reads return the nested shape; updates need writable FK ids
+        if self.request.method == "PUT":
+            return ProductWriteSerializer
+        return ProductSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class ProductCreate(generics.CreateAPIView):
     """POST /api/product/ - add a product."""
     queryset = Product.objects.all()
-    serializer_class = ProductCreateSerializer
+    serializer_class = ProductWriteSerializer
 
 
 class CategoryProducts(generics.ListAPIView):

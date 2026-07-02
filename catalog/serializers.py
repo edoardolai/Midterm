@@ -32,9 +32,9 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
 
-class ProductCreateSerializer(serializers.ModelSerializer):
-    """Used for the POST endpoint. category/brand are plain FK ids here,
-    not the nested shape above.
+class ProductWriteSerializer(serializers.ModelSerializer):
+    """Used for the write operations (POST create, PUT update). category and
+    brand are plain FK ids here, not the nested shape above.
     """
 
     class Meta:

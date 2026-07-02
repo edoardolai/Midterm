@@ -6,7 +6,7 @@
 <ul>
     {% if product %}
     <li>
-        GET <code>/api/product/&lt;id&gt;/</code> - full detail of one product<br>
+        GET / PUT / DELETE <code>/api/product/&lt;id&gt;/</code> - one product: detail, update, remove<br>
         <a href="{% url 'catalog:product-detail' product.pk %}">/api/product/{{ product.pk }}/</a>
     </li>
     {% endif %}
