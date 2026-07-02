@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}retailapi{% endblock %}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        li {
+            margin-bottom: 0.6rem;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 1px 4px;
+        }
+
+        .errorlist {
+            color: #b00020;
+        }
+    </style>
+</head>
+
+<body>
+    <h1><a href="{% url 'catalog:index' %}">retailapi</a></h1>
+    {% block content %}{% endblock %}
+</body>
+
+</html>

@@ -83,7 +83,7 @@ def run():
             sale = parse_price(row["discounted_price"])
             category_name = parse_top_category(row["product_category_tree"])
 
-            # a product is useless to us without prices and a category
+            # a product is useless without prices and a category
             if retail is None or sale is None or not category_name:
                 skipped += 1
                 continue

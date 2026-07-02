@@ -1,0 +1,53 @@
+{% extends "catalog/base.html" %}
+
+{% block content %}
+<p>A RESTful catalog service over the Flipkart products dataset. The endpoints:</p>
+
+<ul>
+    {% if product %}
+    <li>
+        GET <code>/api/product/&lt;id&gt;/</code> - full detail of one product<br>
+        <a href="{% url 'catalog:product-detail' product.pk %}">/api/product/{{ product.pk }}/</a>
+    </li>
+    {% endif %}
+
+    {% if category %}
+    <li>
+        GET <code>/api/category/&lt;id&gt;/products/</code> - products in a category, biggest discount first<br>
+        <a href="{% url 'catalog:category-products' category.pk %}">/api/category/{{ category.pk }}/products/ ({{
+            category.name }})</a>
+    </li>
+    {% endif %}
+
+    <li>
+        GET <code>/api/deals/?min_discount=&amp;category=</code> - products at or above a discount threshold<br>
+        <a href="{% url 'catalog:deals-list' %}?min_discount=50">/api/deals/?min_discount=50</a>
+    </li>
+
+    {% if brand %}
+    <li>
+        GET <code>/api/brand/&lt;id&gt;/</code> - a brand's catalog with aggregate stats<br>
+        <a href="{% url 'catalog:brand-detail' brand.pk %}">/api/brand/{{ brand.pk }}/ ({{ brand.name }})</a>
+    </li>
+    {% endif %}
+
+    <li>
+        GET <code>/api/analytics/category-pricing/</code> - per-category pricing and discount averages<br>
+        <a href="{% url 'catalog:category-pricing' %}">/api/analytics/category-pricing/</a>
+    </li>
+
+    <li>
+        POST <code>/api/product/</code> - create a product (also available as an
+        <a href="{% url 'catalog:product-add' %}">HTML form</a>)<br>
+        <a href="{% url 'catalog:product-create' %}">/api/product/</a>
+    </li>
+</ul>
+
+<h2>Environment</h2>
+<ul>
+    <li>Python {{ python_version }}</li>
+    <li>Django {{ django_version }}</li>
+    <li>Django REST Framework {{ drf_version }}</li>
+    <li>Admin site: <a href="/admin/">/admin/</a> - username <code>admin</code>, password <code>admin123</code></li>
+</ul>
+{% endblock %}
