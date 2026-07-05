@@ -32,6 +32,7 @@ def index(request):
     return render(request, "catalog/index.html", context)
 
 
+
 def product_add(request):
     """Add a product through a normal HTML form.
 
@@ -46,3 +47,12 @@ def product_add(request):
     else:
         form = ProductForm()
     return render(request, "catalog/product_add.html", {"form": form})
+
+def deals_page(request):
+    """Interactive deals browser. The page itself is server-rendered (the
+    category dropdown comes from the DB); the results table is filled
+    client-side by deals.js calling the /api/deals/ endpoint.
+    """
+    categories = Category.objects.all()
+    return render(request, "catalog/deals.html", {"categories": categories})
+

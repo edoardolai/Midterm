@@ -1,0 +1,38 @@
+{% extends "catalog/base.html" %}
+{% load static %}
+
+{% block title %}Deals browser - retailapi{% endblock %}
+
+{% block content %}
+<h2>Deals browser</h2>
+<p>
+    The filters below call <code>/api/deals/</code> with query parameters and
+    render the JSON response into the table. Results come 50 per page.
+</p>
+
+<form id="filters">
+    <p>
+        <label for="min-discount">Minimum discount (%)</label>
+        <input type="number" id="min-discount" value="50" min="0" max="100">
+    </p>
+    <p>
+        <label for="category">Category</label>
+        <select id="category">
+            <option value="">All categories</option>
+            {% for category in categories %}
+            <option value="{{ category.pk }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <button type="submit">Search</button>
+</form>
+
+<p id="status"></p>
+<div id="results"></div>
+<p>
+    <button type="button" id="prev" disabled>Previous</button>
+    <button type="button" id="next" disabled>Next</button>
+</p>
+
+<script src="{% static 'js/deals.js' %}" defer></script>
+{% endblock %}

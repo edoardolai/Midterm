@@ -7,11 +7,16 @@ expected discounts and averages can be checked by hand.
 from decimal import Decimal
 
 from django.urls import reverse
+from hypothesis import given, settings as hypothesis_settings
+from hypothesis import strategies as st
+from hypothesis.extra.django import TestCase as HypothesisTestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .api import with_discount
 from .factories import BrandFactory, CategoryFactory, ProductFactory
 from .models import Product
+from .serializers import ProductSerializer
 
 
 class ProductDetailTests(APITestCase):
@@ -64,13 +69,13 @@ class CategoryProductsTests(APITestCase):
         url = reverse("catalog:category-products", args=[self.category.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        ids = [row["id"] for row in response.json()]
+        ids = [row["id"] for row in response.json()["results"]]
         # biggest discount first, other category absent
         self.assertEqual(ids, [self.big.pk, self.small.pk])
 
     def test_zero_retail_price_products_are_excluded(self):
         url = reverse("catalog:category-products", args=[self.category.pk])
-        ids = [row["id"] for row in self.client.get(url).json()]
+        ids = [row["id"] for row in self.client.get(url).json()["results"]]
         self.assertNotIn(self.zero_retail.pk, ids)
 
 
@@ -92,13 +97,13 @@ class DealsTests(APITestCase):
     def test_min_discount_filters_products(self):
         url = reverse("catalog:deals-list")
         response = self.client.get(url, {"min_discount": "50"})
-        ids = [row["id"] for row in response.json()]
+        ids = [row["id"] for row in response.json()["results"]]
         self.assertEqual(ids, [self.deal_60.pk])
 
     def test_defaults_to_zero_when_min_discount_missing_or_invalid(self):
         url = reverse("catalog:deals-list")
         for params in ({}, {"min_discount": "not-a-number"}):
-            ids = [row["id"] for row in self.client.get(url, params).json()]
+            ids = [row["id"] for row in self.client.get(url, params).json()["results"]]
             # everything with retail > 0 comes back, biggest discount first
             self.assertEqual(
                 ids, [self.deal_60.pk, self.deal_20.pk, self.no_deal.pk]
@@ -109,7 +114,7 @@ class DealsTests(APITestCase):
         response = self.client.get(
             url, {"min_discount": "10", "category": self.category.pk}
         )
-        ids = [row["id"] for row in response.json()]
+        ids = [row["id"] for row in response.json()["results"]]
         self.assertEqual(ids, [self.deal_60.pk])
 
 
@@ -331,3 +336,67 @@ class HtmlPagesTests(APITestCase):
         new = Product.objects.get(source_id="form-002")
         self.assertEqual(response.headers["Location"],
                          reverse("catalog:product-detail", args=[new.pk]))
+
+class ProductSerializerTests(APITestCase):
+    """Checks on the serializer itself, independent of any endpoint."""
+
+    def test_serializer_exposes_the_expected_fields(self):
+        product = ProductFactory()
+        data = ProductSerializer(product).data
+        self.assertEqual(
+            set(data.keys()),
+            {"id", "source_id", "name", "description", "category", "brand",
+             "retail_price", "sale_price", "discount_pct", "rating",
+             "image_url", "product_url"},
+        )
+
+
+class DiscountPropertyTests(HypothesisTestCase):
+    """Property-based test (hypothesis): the discount formula exists twice,
+    once as the Python property on the model and once as the database
+    expression in with_discount(). For any valid price pair the two must
+    agree. The DB value travels through SQLite floats, so agreement is
+    checked to within one 0.1 rounding step rather than exact equality.
+    """
+
+    @hypothesis_settings(max_examples=50, deadline=None)
+    @given(
+        retail=st.decimals(
+            min_value=Decimal("0.01"), max_value=Decimal("99999.99"), places=2
+        ),
+        fraction=st.decimals(min_value=0, max_value=1, places=4),
+    )
+    def test_python_property_agrees_with_db_annotation(self, retail, fraction):
+        sale = (retail * fraction).quantize(Decimal("0.01"))
+        product = ProductFactory(retail_price=retail, sale_price=sale)
+
+        annotated = with_discount(Product.objects.filter(pk=product.pk)).get()
+        db_value = Decimal(annotated.discount_pct_db).quantize(Decimal("0.1"))
+
+        self.assertLessEqual(abs(product.discount_pct - db_value), Decimal("0.1"))
+        self.assertGreaterEqual(db_value, Decimal("0"))
+        self.assertLessEqual(db_value, Decimal("100"))
+
+
+class ApiDocsTests(APITestCase):
+    def test_openapi_schema_is_served(self):
+        response = self.client.get(reverse("catalog:schema"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_swagger_ui_page_renders(self):
+        response = self.client.get(reverse("catalog:docs"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class DealsPageTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = CategoryFactory(name="Visible Category")
+
+    def test_deals_page_renders_with_category_filter_and_script(self):
+        response = self.client.get(reverse("catalog:deals-page"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        html = response.content.decode()
+        self.assertIn("Visible Category", html)
+        self.assertIn("min-discount", html)
+        self.assertIn("js/deals.js", html)

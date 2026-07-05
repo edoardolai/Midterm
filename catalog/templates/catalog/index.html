@@ -20,7 +20,9 @@
     {% endif %}
 
     <li>
-        GET <code>/api/deals/?min_discount=&amp;category=</code> - products at or above a discount threshold<br>
+        GET <code>/api/deals/?min_discount=&amp;category=</code> - products at or above a discount threshold (also
+        available as an
+        <a href="{% url 'catalog:deals-page' %}">interactive page</a>)<br>
         <a href="{% url 'catalog:deals-list' %}?min_discount=50">/api/deals/?min_discount=50</a>
     </li>
 
@@ -42,6 +44,13 @@
         <a href="{% url 'catalog:product-create' %}">/api/product/</a>
     </li>
 </ul>
+
+<h2>API documentation</h2>
+<p>
+    Interactive documentation for every endpoint is available as
+    <a href="{% url 'catalog:docs' %}">Swagger UI</a>, generated from the
+    <a href="{% url 'catalog:schema' %}">OpenAPI schema</a>.
+</p>
 
 <h2>Environment</h2>
 <ul>
