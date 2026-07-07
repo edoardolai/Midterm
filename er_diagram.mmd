@@ -1,0 +1,27 @@
+erDiagram
+    CATEGORY ||--o{ PRODUCT : "has"
+    BRAND |o..o{ PRODUCT : "labels (optional)"
+
+    CATEGORY {
+        bigint id PK
+        varchar_120 name UK
+    }
+
+    BRAND {
+        bigint id PK
+        varchar_120 name UK
+    }
+
+    PRODUCT {
+        bigint id PK
+        varchar_64 source_id UK "uniq_id from the source CSV"
+        varchar_255 name
+        text description
+        bigint category_id FK "on_delete PROTECT"
+        bigint brand_id FK "nullable, on_delete SET_NULL"
+        decimal_10_2 retail_price "gte 0"
+        decimal_10_2 sale_price "gte 0 and lte retail_price"
+        decimal_2_1 rating "nullable, 0 to 5"
+        varchar_500 image_url
+        varchar_500 product_url
+    }
