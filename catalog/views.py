@@ -17,8 +17,8 @@ def index(request):
     details the brief asks for (versions, packages, admin login).
     """
     # sample rows so the parameterised endpoints are clickable
-    product = Product.objects.first()
-    category = Category.objects.first()
+    product = Product.objects.get(pk=1)
+    category = Category.objects.get(pk=1)
     brand = Brand.objects.first()
 
     context = {
